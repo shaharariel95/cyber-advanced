@@ -9,18 +9,19 @@
             const requestOptions = {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: `session_id=${sessionId}`,
-                credentials: 'include'  // Include credentials to send cookies
+                body: `session_id=${sessionId}`
+                // credentials: 'include'  // Include credentials to send cookies
             };
             fetch('http://localhost:8080/CSRFCookie', requestOptions)
                 .then(response => {
                     if (response.ok) {
-                        return response.json();
+                        // return response.json();
+                        console.log("thanks")
+                        return
                     } else {
                         throw new Error('Network response was not ok');
                     }
                 })
-                .then(data => console.log("response: " + data.message))
                 .catch(error => console.error('There was a problem with the fetch operation:', error));
             console.log("test");
         } else {

