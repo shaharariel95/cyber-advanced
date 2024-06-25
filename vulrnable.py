@@ -1,11 +1,23 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session
+from flask import Flask, render_template, request, redirect, url_for, flash, session, make_response
+from flask_cors import CORS, cross_origin
 import json
+import random
+import string
 from datetime import datetime
 
 app = Flask(__name__)
+CORS(app, resources={r"/*": {"origins": "http://localhost:8080"}})
+# app.config['CORS_HEADERS'] = 'Content-Type'
 app.secret_key = 'supersecretkey'
 
+
+
+
+def generate_session_id(length=6):
+    return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
+
 @app.route('/')
+@cross_origin()
 def home():
     if 'username' in session:
         username = session['username']
@@ -38,8 +50,12 @@ def login():
         elif data['pass'][user_key] != password:
             flash('Password not correct')
         else:
+            session_id = generate_session_id()
             session['username'] = username
-            return redirect(url_for('home'))
+            resp = make_response(redirect(url_for('home')))
+            resp.set_cookie('session_id', session_id)
+            
+            return resp
     
     return render_template('login.html')
 
