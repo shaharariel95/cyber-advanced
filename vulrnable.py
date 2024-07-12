@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session
+from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
 import requests
 import json
 from datetime import datetime
@@ -16,7 +16,6 @@ def home():
         return render_template('home.html', username=username, current_date=current_date, chat_data=chat_data)
     else:
         return redirect(url_for('login'))
-
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -39,38 +38,61 @@ def login():
             return redirect(url_for('home'))
     return render_template('login.html')
 
-
 @app.route('/logout', methods=['POST'])
 def logout():
     session.pop('username', None)
     return redirect(url_for('login'))
 
-
 @app.route('/chat', methods=['POST'])
 def chat():
     if 'username' not in session:
         return redirect(url_for('login'))
+    
     username = session['username']
     message = request.form['message']
+    
     with open('chat.json', 'r') as file:
         chat_data = json.load(file)
+    
     chat_data.append({"username": username, "message": message, "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")})
+    
     with open('chat.json', 'w') as file:
         json.dump(chat_data, file)
+    
     return redirect(url_for('home'))
 
-# SSRF stock check endpoint
-@app.route('/stock-check', methods=['GET'])
-def stock_check():
-    url = request.args.get('url')
-    response = requests.get(url)
-    return response.text
+# Add the new check user status endpoint
+@app.route('/check-user-exists', methods=['POST'])
+def check_user_exists():
+    url = request.form.get('userApi')
+    
+    if not url:
+        return jsonify({'exists': False, 'message': 'No URL provided'}), 400
+
+    with open('cred.json', 'r') as file:
+        data = json.load(file)
+        users = data['users'].values()
+
+    response = {
+        'exists': False,
+        'username': None
+    }
+
+    # Extract the username from the provided URL
+    username = url.split('=')[-1]  # Assuming the URL format is fixed and ends with '=username'
+
+    if username in users:
+        response['exists'] = True
+        response['username'] = username
+    
+    return jsonify(response)
 
 # Internal admin interface
 @app.route('/admin')
 def admin():
     with open('cred.json', 'r') as file:
         data = json.load(file)
+    
     users = {key: value for key, value in data['users'].items() if key != "0"}
     return render_template('admin.html', users=users)
 
@@ -80,6 +102,10 @@ def delete_user():
         username = request.form['username']
     elif request.method == 'GET':
         username = request.args.get('username')
+
+    if username == 'admin':
+        flash('Admin cannot delete themselves.')
+        return redirect(url_for('admin'))
 
     with open('cred.json', 'r') as file:
         data = json.load(file)
@@ -101,7 +127,6 @@ def delete_user():
     else:
         flash(f"User {username} not found.")
     return redirect(url_for('admin'))
-
 
 if __name__ == '__main__':
     app.run(debug=True)
