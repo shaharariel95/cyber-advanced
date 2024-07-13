@@ -26,6 +26,12 @@
                     {% for chat in chat_data %}
                         <div class="alert alert-secondary">
                             <strong>{{ chat.username }}</strong> ({{ chat.timestamp }}): {{ chat.message |safe }}
+                            {% if chat.username == username %}
+                                <form method="post" action="{{ url_for('delete_message') }}" class="d-inline">
+                                    <input type="hidden" name="timestamp" value="{{ chat.timestamp }}">
+                                    <button type="submit" class="btn btn-danger btn-sm float-right">Delete</button>
+                                </form>
+                            {% endif %}
                         </div>
                     {% endfor %}
                 </div>
