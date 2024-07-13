@@ -1,8 +1,8 @@
-from urllib.parse import urlparse
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
 import requests
 import json
 from datetime import datetime
+from urllib.parse import urlparse
 
 app = Flask(__name__)
 app.secret_key = 'supersecretkey'
@@ -71,18 +71,31 @@ def check_user_exists():
     else:
         return jsonify({'exists': False, 'username': username})
 
-# Internal admin interface
+
 @app.route('/admin')
 def admin():
-    with open('cred.json', 'r') as file:
-        data = json.load(file)
-    users = {key: value for key, value in data['users'].items() if key != "0"}
-    return render_template('admin.html', users=users)
+    if 'username' in session and session['username'] == 'admin':
+        with open('cred.json', 'r') as file:
+            data = json.load(file)
+        
+        users = {k: v for k, v in data['users'].items() if k != "0"}
+        return render_template('admin.html', users=users)
+    
+    flash('Unauthorized access. Please log in as an admin.')
+    return redirect(url_for('login'))
+
 
 @app.route('/admin/delete', methods=['GET', 'POST'])
 def delete_user():
     if request.method == 'POST':
         username = request.form['username']
+        url = request.form.get('url', None)  # Allow admin to provide URL
+        print (url)
+
+        # Check if the URL is safe before making any requests
+        if url and not is_safe_url(url):
+            flash('Invalid URL specified.')
+            return redirect(url_for('admin'))
     elif request.method == 'GET':
         username = request.args.get('username')
 
@@ -111,7 +124,24 @@ def delete_user():
         flash(f"User {username} not found.")
     return redirect(url_for('admin'))
 
+
+# Configuration for whitelisted URLs
+WHITELISTED_URLS = [
+    "https://api.example.com",
+    "https://another-trusted-site.com"
+]
+
+def is_url_whitelisted(url, whitelist):
+    parsed_url = urlparse(url)
+    for allowed in whitelist:
+        allowed_parsed = urlparse(allowed)
+        if parsed_url.scheme == allowed_parsed.scheme and parsed_url.netloc == allowed_parsed.netloc:
+            return True
+    return False
+
 def fetch_data_from_url(url):
+    if not is_url_whitelisted(url, WHITELISTED_URLS):
+        raise ValueError("URL not whitelisted")
     response = requests.get(url)
     return response.json()
 
