@@ -58,7 +58,7 @@ def chat():
     return redirect(url_for('home'))
 
 # Add the new check user status endpoint
-@app.route('/check-user-exists', methods=['GET'])
+@app.route('/check_user_exists', methods=['GET'])
 def check_user_exists():
     username = request.args.get('username')
 
