@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Home</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <h2 class="text-center">Hello {{ username }}</h2>
+                <p class="text-center">It's {{ current_date }}</p>
+                <form method="post" action="{{ url_for('logout') }}">
+                    <button type="submit" class="btn btn-danger btn-block">Logout</button>
+                </form>
+                <h3 class="text-center mt-4">Chat</h3>
+                <form method="post" action="{{ url_for('chat') }}">
+                    <div class="form-group">
+                        <textarea class="form-control" name="message" rows="3" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">Send</button>
+                </form>
+                <div class="chat-messages mt-4">
+                    {% for chat in chat_data %}
+                        <div class="alert alert-secondary">
+                            <strong>{{ chat.username }}</strong> ({{ chat.timestamp }}): {{ chat.message }}
+                            {% if chat.username == username %}
+                                <form method="post" action="{{ url_for('delete_message') }}" class="d-inline">
+                                    <input type="hidden" name="timestamp" value="{{ chat.timestamp }}">
+                                    <button type="submit" class="btn btn-danger btn-sm float-right">Delete</button>
+                                </form>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+                <h3 class="text-center mt-4">Check User Exists</h3>
+                <form id="check-user-form" method="get" action="{{ url_for('check_user_exists') }}">
+                    <div class="form-group">
+                        <input type="text" class="form-control" id="username" name="username" placeholder="Enter username to check" required>
+                    </div>
+                    <input type="hidden" id="userApi" name="userApi">
+                    <button type="submit" class="btn btn-primary btn-block">Check User</button>
+                </form>
+                <div id="user-status" class="mt-4"></div>
+            </div>
+        </div>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('#check-user-form').on('submit', function(event) {
+                event.preventDefault();
+                var username = $('#username').val();
+                var userApiUrl = `http://localhost:5000/check_user_exists?username=${username}`;
+                
+                $('#userApi').val(userApiUrl);
+                
+                $.get("{{ url_for('check_user_exists') }}", $(this).serialize(), function(data) {
+                    var status = $('#user-status');
+                    if (data.exists) {
+                        status.html('<div class="alert alert-success">User ' + data.username + ' exists in the system.</div>');
+                    } else {
+                        status.html('<div class="alert alert-danger">User ' + data.username + ' does not exist in the system.</div>');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

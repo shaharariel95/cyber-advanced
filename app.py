@@ -1,10 +1,12 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
 import requests
 import json
+import bleach
 from datetime import datetime
 from urllib.parse import urlparse
 
 app = Flask(__name__)
+# No CORS for not allowed sites!
 app.secret_key = 'supersecretkey'
 
 
@@ -15,7 +17,10 @@ def home():
         current_date = datetime.now().strftime("%B %d, %Y")
         with open('chat.json', 'r') as file:
             chat_data = json.load(file)
-        return render_template('home.html', username=username, current_date=current_date, chat_data=chat_data)
+
+        chat_data = sorted(chat_data, key=lambda x: x['timestamp'], reverse=True)
+
+        return render_template('home-safe.html', username=username, current_date=current_date, chat_data=chat_data)
     else:
         return redirect(url_for('login'))
 
@@ -51,12 +56,34 @@ def chat():
         return redirect(url_for('login'))
     username = session['username']
     message = request.form['message']
+    clean_message = bleach.clean(message)
     with open('chat.json', 'r') as file:
         chat_data = json.load(file)
-    chat_data.append({"username": username, "message": message, "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")})
+    chat_data.append({"username": username, "message": clean_message, "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")})
     with open('chat.json', 'w') as file:
         json.dump(chat_data, file)
     return redirect(url_for('home'))
+
+
+
+@app.route('/delete_message', methods=['POST'])
+def delete_message():
+    username = session['username']
+    if not username:
+        return redirect(url_for('login'))
+    
+    timestamp = request.form['timestamp']
+    
+    with open('chat.json', 'r') as file:
+        chat_data = json.load(file)
+    
+    chat_data = [msg for msg in chat_data if not (msg['timestamp'] == timestamp and msg['username'] == username)]
+    
+    with open('chat.json', 'w') as file:
+        json.dump(chat_data, file)
+    
+    return redirect(url_for('home'))
+
 
 # Add the new check user status endpoint
 @app.route('/check_user_exists', methods=['GET'])
