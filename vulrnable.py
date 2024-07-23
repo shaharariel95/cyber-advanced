@@ -7,7 +7,7 @@ from datetime import datetime
 import hashlib
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "http://localhost:8080"}})
+CORS(app, resources={r"/*": {"origins": "*"}})
 app.secret_key = 'supersecretkey'
 
 def generate_session_id(username):

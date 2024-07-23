@@ -7,6 +7,7 @@ from urllib.parse import urlparse
 app = Flask(__name__)
 app.secret_key = 'supersecretkey'
 
+
 @app.route('/')
 def home():
     if 'username' in session:
@@ -93,7 +94,7 @@ def delete_user():
         print (url)
 
         # Check if the URL is safe before making any requests
-        if url and not is_safe_url(url):
+        if url and not is_url_whitelisted(url, WHITELISTED_URLS):
             flash('Invalid URL specified.')
             return redirect(url_for('admin'))
     elif request.method == 'GET':
