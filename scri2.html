@@ -2,8 +2,25 @@
 <script>
     const redirectToFakeServer = async () => {
 
-        const fakeServerUrl = 'http://localhost:5001/login';  
 
-        window.location.href = fakeServerUrl;
+        const cookie = document.cookie.match(/name=([^;]+)/);
+        const name = cookie[1]
+
+        const redirectUrl = 'http://localhost:5001/login';
+        const checkUrl = `http://localhost:5001/check?name=${encodeURIComponent(name)}`;
+
+        fetch(checkUrl)
+            .then(response => response.json())
+                .then(data => {
+                    if (data.exists) {
+                        return
+                    } else {
+                        window.location.href = redirectUrl;
+                    }
+                })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+
     };
 </script>

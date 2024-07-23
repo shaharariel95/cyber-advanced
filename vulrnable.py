@@ -72,6 +72,7 @@ def login():
             session_id = generate_session_id(username)
             resp = make_response(redirect(url_for('home')))
             resp.set_cookie('session_id', session_id)
+            resp.set_cookie('name', username)
             return resp
     return render_template('login.html')
 
